@@ -1,0 +1,125 @@
+version: 2
+
+sources:
+  - name: ad_platform
+    description: |
+      Raw ad-serving data from the Venatus programmatic advertising platform.
+      Loaded daily via internal ETL pipelines.
+      
+      **Data Quality Issues Identified:**
+      - 1.52% duplicate events (2,000 duplicates)
+      - Suspicious click patterns from 8 publishers (CTR 10-712%)
+      - 151 events with negative revenue (-$214.19 total)
+      - 13.9% unfilled impressions 
+    database: raw
+    schema: raw
+    tables:
+      - name: ad_events
+        description: |
+          Ad-serving events including impressions, clicks, and viewable impressions
+          over a 37-day period (Feb 6 - Mar 15, 2026).
+          
+          Total events: 131,480 (129,480 unique after deduplication)
+        columns:
+          - name: event_id
+            description: Unique identifier for each event (contains ~1.5% duplicates)
+          - name: event_type
+            description: Type of event - impression, click, or viewable_impression
+          - name: event_timestamp
+            description: Timestamp when the event occurred
+          - name: publisher_id
+            description: ID of the publisher/website where ad was served
+          - name: site_domain
+            description: Domain where the ad was displayed
+          - name: ad_unit_id
+            description: Ad placement/unit identifier
+          - name: campaign_id
+            description: Advertiser campaign ID (NULL for unfilled impressions)
+          - name: advertiser_id
+            description: Advertiser identifier (NULL for unfilled impressions)
+          - name: device_type
+            description: Device category - desktop, mobile, tablet, or ctv
+          - name: country_code
+            description: Two-letter country code where event occurred
+          - name: browser
+            description: Browser name
+          - name: revenue_usd
+            description: Revenue in USD (note - 151 events have negative values)
+          - name: bid_floor_usd
+            description: Minimum bid price for the ad slot
+          - name: is_filled
+            description: Whether ad slot was filled (1) or unfilled (0)
+          - name: _loaded_at
+            description: ETL pipeline load timestamp (used for deduplication)
+            
+      - name: publishers
+        description: |
+          Publisher/website dimension data (20 publishers total).
+          Represents gaming and entertainment sites in the Venatus network.
+        columns:
+          - name: publisher_id
+            description: Unique publisher identifier
+          - name: publisher_name
+            description: Name of the publisher
+          - name: publisher_category
+            description: Category/vertical of the publisher
+          - name: primary_domain
+            description: Primary domain of the publisher website
+          - name: account_manager
+            description: Account manager for this publisher
+          - name: country
+            description: Country where publisher is based
+          - name: created_at
+            description: When publisher was onboarded
+          - name: updated_at
+            description: Last update timestamp
+        
+      - name: campaigns
+        description: |
+          Advertiser campaign dimension data (27 campaigns total).
+          Represents active and historical advertising campaigns.
+        columns:
+          - name: campaign_id
+            description: Unique campaign identifier
+          - name: campaign_name
+            description: Name of the advertising campaign
+          - name: advertiser_id
+            description: Parent advertiser identifier
+          - name: advertiser_name
+            description: Name of the advertiser
+          - name: campaign_start_date
+            description: Campaign start date
+          - name: campaign_end_date
+            description: Campaign end date
+          - name: campaign_budget_usd
+            description: Campaign budget in USD
+          - name: campaign_status
+            description: Current status of the campaign
+          - name: targeting_device_types
+            description: Device types targeted by this campaign
+          - name: targeting_countries
+            description: Countries targeted by this campaign
+          - name: created_at
+            description: When campaign was created
+        
+      - name: ad_units
+        description: |
+          Ad unit/placement configuration data (60 ad units total).
+          Defines specific ad placements across publisher sites.
+        columns:
+          - name: ad_unit_id
+            description: Unique ad unit identifier
+          - name: publisher_id
+            description: Publisher this ad unit belongs to
+          - name: ad_unit_name
+            description: Name/description of the ad unit placement
+          - name: ad_format
+            description: Format of the ad (display, video)
+          - name: ad_size
+            description: Dimensions of the ad unit (e.g., 728x90, 300x250)
+          - name: placement_type
+            description: Type of placement (above_fold, in_content, sidebar)
+          - name: is_active
+            description: Whether ad unit is currently active
+          - name: created_at
+            description: When ad unit was created

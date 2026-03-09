@@ -1,0 +1,110 @@
+version: 2
+
+sources:
+  - name: raw
+    database: raw
+    schema: raw
+    description: >
+      Raw data from the Venatus ad serving platform.
+      Loaded daily via internal ETL pipelines.
+      **Treat this data as untrusted** — validate and clean before use.
+    tables:
+      - name: ad_events
+        description: ""  # TODO: Add description after exploring the data
+        columns:
+          - name: event_id
+            description: ""
+          - name: event_type
+            description: ""
+          - name: event_timestamp
+            description: ""
+          - name: publisher_id
+            description: ""
+          - name: site_domain
+            description: ""
+          - name: ad_unit_id
+            description: ""
+          - name: campaign_id
+            description: ""
+          - name: advertiser_id
+            description: ""
+          - name: device_type
+            description: ""
+          - name: country_code
+            description: ""
+          - name: browser
+            description: ""
+          - name: revenue_usd
+            description: ""
+          - name: bid_floor_usd
+            description: ""
+          - name: is_filled
+            description: ""
+          - name: _loaded_at
+            description: ""
+
+      - name: publishers
+        description: ""
+        columns:
+          - name: publisher_id
+            description: ""
+          - name: publisher_name
+            description: ""
+          - name: publisher_category
+            description: ""
+          - name: primary_domain
+            description: ""
+          - name: account_manager
+            description: ""
+          - name: country
+            description: ""
+          - name: created_at
+            description: ""
+          - name: updated_at
+            description: ""
+
+      - name: campaigns
+        description: ""
+        columns:
+          - name: campaign_id
+            description: ""
+          - name: campaign_name
+            description: ""
+          - name: advertiser_id
+            description: ""
+          - name: advertiser_name
+            description: ""
+          - name: campaign_start_date
+            description: ""
+          - name: campaign_end_date
+            description: ""
+          - name: campaign_budget_usd
+            description: ""
+          - name: campaign_status
+            description: ""
+          - name: targeting_device_types
+            description: ""
+          - name: targeting_countries
+            description: ""
+          - name: created_at
+            description: ""
+
+      - name: ad_units
+        description: ""
+        columns:
+          - name: ad_unit_id
+            description: ""
+          - name: publisher_id
+            description: ""
+          - name: ad_unit_name
+            description: ""
+          - name: ad_format
+            description: ""
+          - name: ad_size
+            description: ""
+          - name: placement_type
+            description: ""
+          - name: is_active
+            description: ""
+          - name: created_at
+            description: ""
