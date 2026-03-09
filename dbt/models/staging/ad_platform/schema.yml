@@ -1,0 +1,109 @@
+version: 2
+
+models:
+  - name: stg_ad_events
+    description: |
+      Deduplicated and cleaned ad-serving events with data quality flags.
+      
+      Data Quality Fixes Applied:
+      - Deduplication: Removed 2,000 duplicate events (1.52%) by keeping most recent load
+      - Fraud Detection: Flagged 8 publishers with suspicious CTR patterns (10-712%)
+      - Negative Revenue: Flagged 151 events with negative revenue values
+    columns:
+      - name: event_id
+        description: Unique identifier for each event (after deduplication)
+        tests:
+          - unique
+          - not_null
+          
+      - name: event_type
+        description: Type of event (impression, click, viewable_impression)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['impression', 'click', 'viewable_impression']
+              
+      - name: event_timestamp
+        description: When the event occurred
+        tests:
+          - not_null
+          
+      - name: event_date
+        description: Date of the event (derived from event_timestamp)
+        tests:
+          - not_null
+          
+      - name: publisher_id
+        description: Publisher where ad was served
+        tests:
+          - not_null
+          - relationships:
+              to: source('ad_platform', 'publishers')
+              field: publisher_id
+          
+      - name: is_filled
+        description: Whether ad slot was filled (1) or unfilled (0)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+              
+      - name: revenue_usd
+        description: Revenue in USD (may be 0 for unfilled or negative in rare cases)
+        
+      - name: is_suspicious_traffic
+        description: Flag for publishers with abnormally high CTR (>10%)
+        tests:
+          - accepted_values:
+              values: [0, 1]
+              
+      - name: has_negative_revenue
+        description: Flag for events with negative revenue
+        tests:
+          - accepted_values:
+              values: [0, 1]
+              
+  - name: stg_publishers
+    description: Cleaned publisher dimension table
+    columns:
+      - name: publisher_id
+        description: Unique publisher identifier
+        tests:
+          - unique
+          - not_null
+          
+      - name: publisher_name
+        description: Name of the publisher
+        tests:
+          - not_null
+          
+  - name: stg_campaigns
+    description: Cleaned campaign dimension table
+    columns:
+      - name: campaign_id
+        description: Unique campaign identifier
+        tests:
+          - unique
+          - not_null
+          
+      - name: campaign_name
+        description: Name of the campaign
+        tests:
+          - not_null
+          
+  - name: stg_ad_units
+    description: Cleaned ad unit dimension table
+    columns:
+      - name: ad_unit_id
+        description: Unique ad unit identifier
+        tests:
+          - unique
+          - not_null
+          
+      - name: publisher_id
+        description: Publisher this ad unit belongs to
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_publishers')
+              field: publisher_id

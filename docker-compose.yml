@@ -46,8 +46,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     ports:
-      - "9002:9000"   # S3 API
-      - "9001:9001"   # Console (optional, for debugging)
+      - "9004:9000"   # S3 API
+      - "9005:9001"   # Console (optional, for debugging)
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
