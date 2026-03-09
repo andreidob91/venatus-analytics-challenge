@@ -17,6 +17,27 @@ models:
       - name: is_high_risk_publisher
         description: Flag for publishers with CTR > 10% (fraud risk)
         
+  - name: dim_campaigns
+    description: Campaign dimension with performance metrics
+    columns:
+      - name: campaign_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: campaign_name
+        tests:
+          - not_null
+          
+  - name: dim_ad_units
+    description: Ad unit dimension
+    columns:
+      - name: ad_unit_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+          
   - name: fct_ad_events_daily
     description: |
       Daily aggregated ad events fact table.
@@ -34,3 +55,15 @@ models:
         description: Percentage of impressions that were filled
       - name: ctr_pct
         description: Click-through rate percentage
+        
+  - name: fct_publisher_performance
+    description: |
+      Publisher-level daily performance summary.
+      Grain: one row per day and publisher.
+    columns:
+      - name: event_date
+        tests:
+          - not_null
+      - name: publisher_id
+        tests:
+          - not_null
