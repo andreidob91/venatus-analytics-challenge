@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: dim_publishers
+    description: |
+      Publisher dimension table with lifetime metrics and data quality flags.
+      One row per publisher.
+    columns:
+      - name: publisher_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: publisher_name
+        tests:
+          - not_null
+      - name: is_high_risk_publisher
+        description: Flag for publishers with CTR > 10% (fraud risk)
+        
+  - name: fct_ad_events_daily
+    description: |
+      Daily aggregated ad events fact table.
+      Grain: one row per day, publisher, campaign, device, and country.
+    columns:
+      - name: event_date
+        description: Date of events
+        tests:
+          - not_null
+      - name: publisher_id
+        description: Publisher FK
+        tests:
+          - not_null
+      - name: fill_rate_pct
+        description: Percentage of impressions that were filled
+      - name: ctr_pct
+        description: Click-through rate percentage
