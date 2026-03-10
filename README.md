@@ -1,3 +1,93 @@
+# Venatus Analytics Challenge - Solution
+**Completed by**: Andrei-Costin Dobrin  
+**Repository**: https://github.com/andreidob91/venatus-analytics-challenge  
+**Date**: March 10, 2026
+
+## 🎯 Solution Summary
+
+Built a production-ready dbt analytics layer on ClickHouse with comprehensive data quality handling, fraud detection, and executive dashboards.
+
+### 📊 Key Deliverables
+
+1. **dbt Models** (9 total):
+   - 4 staging models with deduplication and data quality flags
+   - 5 mart models (3 dimensions + 2 facts)
+   - 30+ tests with 96% pass rate (1 expected failure for fraud detection)
+
+2. **Lightdash Dashboard** (3 charts):
+   - Revenue trends for top 5 publishers
+   - Fill rate performance analysis
+   - Click fraud risk assessment
+
+3. **Documentation**:
+   - Comprehensive DESIGN.md with technical decisions and fraud analysis
+   - EXPLORATION_NOTES.md with detailed data investigation
+   - Full test coverage and data lineage
+
+### 🚨 Critical Findings
+
+**Click Fraud Detected**: Publisher "Pocket Gamer" shows 644% CTR (161 clicks on 25 impressions) - mathematically impossible.
+- **Estimated fraud cost**: $10K+/month ($120K/year)
+- **Action required**: Immediate suspension and investigation
+- **7 additional high-risk publishers** identified with CTR 10-40%
+
+**Other Data Quality Issues**:
+- 2,000 duplicate events (1.52%) - resolved via deduplication
+- 151 events with negative revenue (-$214 total) - flagged for investigation
+- 13.9% unfilled impressions - normal for programmatic advertising
+
+### 🏗️ Architecture
+```
+ClickHouse (raw data)
+    ↓
+dbt Staging Layer (deduplication, data quality flags)
+    ↓
+dbt Marts Layer (business logic, aggregations)
+    ↓
+Lightdash Dashboard (executive insights)
+```
+
+### 📂 Repository Structure
+```
+venatus-analytics-challenge/
+├── dbt/
+│   ├── models/
+│   │   ├── staging/ad_platform/    # 4 staging models
+│   │   └── marts/core/             # 5 mart models
+│   └── tests/                      # Custom fraud detection test
+├── DESIGN.md                       # Technical design document
+├── EXPLORATION_NOTES.md            # Data investigation findings
+└── README.md                       # This file
+```
+
+### 🚀 Quick Start
+```bash
+# Start all services
+make up
+
+# Run dbt models
+make dbt-run
+
+# Run tests
+make dbt-test
+
+# View Lightdash dashboard
+open http://localhost:8880
+```
+
+### 📈 Dashboard Access
+
+**Lightdash**: http://localhost:8880  
+**Login**: admin@lightdash.com / admin123!  
+**ClickHouse**: http://localhost:8123/play
+
+### 📋 Test Results
+
+- **Total tests**: 30
+- **Passing**: 29 (96.7%)
+- **Expected failures**: 1 (fraud detection alert)
+
+
 # Analytics Engineering Take-Home Challenge
 
 ## Overview

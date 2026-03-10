@@ -38,7 +38,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: source('ad_platform', 'publishers')
+              to: ref('stg_publishers')
               field: publisher_id
           
       - name: is_filled

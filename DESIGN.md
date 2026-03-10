@@ -662,7 +662,9 @@ Created 3 interactive charts in Lightdash to provide executive-level visibility 
   - **This is mathematically impossible** - you cannot have 6.4 clicks per impression
   - **Estimated fraudulent spend**: ~$400 (161 clicks × $2.48 avg CPC)
   - **100% fill rate** also suspicious (no publisher is perfect)
+  - **Note**: Low impression volume (25) suggests this may be a test publisher or recent addition, but the CTR pattern is still fraudulent and warrants investigation
   - **ACTION REQUIRED**: Immediate suspension, freeze payments, request traffic logs
+
 
 **High Risk Publishers (CTR 10-40%)**:
 | Publisher | CTR | Risk Level | Clicks | Impressions |
