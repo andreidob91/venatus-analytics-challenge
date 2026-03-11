@@ -204,9 +204,6 @@ Publisher 20 (pocketgamer.com) shows **644% CTR** (161 clicks on 25 impressions)
 - 153 events with negative revenue
 - Total negative revenue: -$221.80 (0.12% of events)
 - Range: -$2.49 to -$0.51
-```
-
----
 
 **Affected Publishers**: ign.com, eurogamer.net, polygon.com, pcgamer.com, gamespot.com
 
