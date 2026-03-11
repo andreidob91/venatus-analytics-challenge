@@ -3,7 +3,7 @@
 
 ## Executive Summary
 
-Built a production-ready dbt analytics layer transforming 131K+ ad-serving events from Venatus's programmatic platform. The project addresses critical data quality issues including duplicate events (1.52%), click fraud (8 publishers with 10-644% CTR), and negative revenue values. The final deliverable includes 4 staging models, 5 mart models (3 dimensions + 2 facts), 36+ comprehensive tests, and clean documentation.
+Built a production-ready dbt analytics layer transforming 131K+ ad-serving events from Venatus's programmatic platform. The project addresses critical data quality issues including duplicate events (1.52%), click fraud (8 publishers with 10-644% CTR), and negative revenue values. The final deliverable includes 4 staging models, 5 mart models (3 dimensions + 2 facts), 35+ comprehensive tests, and clean documentation.
 
 **Key Findings:**
 - 2,000 duplicate events (1.52%) requiring deduplication via ROW_NUMBER() 
