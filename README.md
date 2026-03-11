@@ -1,4 +1,4 @@
-# Venatus Analytics Challenge - Solution
+
 **Completed by**: Andrei-Costin Dobrin  
 **Repository**: https://github.com/andreidob91/venatus-analytics-challenge  
 **Date**: March 10, 2026
@@ -21,20 +21,8 @@ Built a production-ready dbt analytics layer on ClickHouse with comprehensive da
 
 3. **Documentation**:
    - Comprehensive DESIGN.md with technical decisions and fraud analysis
-   - EXPLORATION_NOTES.md with detailed data investigation
+   - EXPLORATION_NOTES.md with initial  detailed data investigation
    - Full test coverage and data lineage
-
-### 🚨 Critical Findings
-
-**Click Fraud Detected**: Publisher "Pocket Gamer" shows 644% CTR (161 clicks on 25 impressions) - mathematically impossible.
-- **Estimated fraud cost**: $10K+/month ($120K/year)
-- **Action required**: Immediate suspension and investigation
-- **7 additional high-risk publishers** identified with CTR 10-40%
-
-**Other Data Quality Issues**:
-- 2,000 duplicate events (1.52%) - resolved via deduplication
-- 151 events with negative revenue (-$214 total) - flagged for investigation
-- 13.9% unfilled impressions - normal for programmatic advertising
 
 ### 🏗️ Architecture
 ```
