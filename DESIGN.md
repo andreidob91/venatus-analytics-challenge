@@ -3,13 +3,14 @@
 
 ## Executive Summary
 
-Built a production-ready dbt analytics layer transforming 131K+ ad-serving events from Venatus's programmatic platform. The project addresses critical data quality issues including duplicate events (1.52%), click fraud (8 publishers with 10-712% CTR), and negative revenue values. The final deliverable includes 4 staging models, 5 mart models (3 dimensions + 2 facts), 30+ comprehensive tests, and clean documentation.
+Built a production-ready dbt analytics layer transforming 131K+ ad-serving events from Venatus's programmatic platform. The project addresses critical data quality issues including duplicate events (1.52%), click fraud (8 publishers with 10-644% CTR), and negative revenue values. The final deliverable includes 4 staging models, 5 mart models (3 dimensions + 2 facts), 30+ comprehensive tests, and clean documentation.
 
 **Key Findings:**
-- 2,000 duplicate events requiring deduplication
-- Publisher 20 shows impossible 712% CTR (100 clicks on 24 impressions) - clear fraud
-- 151 events with negative revenue totaling -$214.19
-- 13.9% unfilled impression rate (normal for programmatic advertising)
+- 2,000 duplicate events (1.52%) requiring deduplication via ROW_NUMBER() 
+- 13 publishers (65% of network) show fraudulent CTR patterns (10-644%)
+- Pocket Gamer: 644% CTR (161 clicks on 25 impressions) - mathematically impossible
+- 153 events with negative revenue totaling -$221.80
+- 15.78% unfilled impression rate (normal for programmatic advertising)
 
 ---
 
@@ -114,7 +115,6 @@ marts layer (tables)
 - Duplicates are exact copies (same timestamp, revenue) but different load times
 
 **Business Impact**:
-- Revenue double-counting: Could overstate revenue by 1.52%
 - Inflated impression/click metrics
 - Incorrect publisher payouts and advertiser billing
 
@@ -141,10 +141,8 @@ cleaned as (
 - Added ~0.5s to staging model runtime
 
 **Production Recommendations**:
-1. Add UNIQUE constraint on `event_id` at database level
-2. Investigate ETL pipeline for root cause
-3. Implement idempotent upsert logic (INSERT ... ON DUPLICATE KEY UPDATE)
-4. Add monitoring: alert if duplicate rate exceeds 1%
+1. Investigate ETL pipeline for root cause
+2. Add monitoring: alert if duplicate rate exceeds 1%
 
 ---
 
@@ -184,25 +182,28 @@ Publisher 20 (pocketgamer.com) shows **712% CTR** (100 clicks on 24 impressions)
 - Flagged but didn't filter out suspicious traffic (preserves data for investigation)
 
 **Production Recommendations**:
-1. **Immediate**: Quarantine Publisher 20, investigate Publishers 15, 11, 9
+**Immediate**: 
+1. Quarantine Publisher 20, investigate Publishers 15, 11, 9
 2. Implement real-time fraud detection (alert on CTR > 5%)
-3. Add IP address analysis and bot detection
 4. Consider third-party fraud detection (IAS, DoubleVerify, White Ops)
-5. Review and potentially terminate contracts with high-CTR publishers
+5. Review the contract with high-CTR
 
 ---
 
 ### Issue 3: Negative Revenue
 
 **Problem**:
-- 151 events with negative revenue
-- Total negative revenue: -$214.19 (0.11% of events)
-- Range: -$2.49 to -$2.16
+- 153 events with negative revenue
+- Total negative revenue: -$221.80 (0.12% of events)
+- Range: -$2.49 to -$0.51
+```
+
+---
 
 **Affected Publishers**: ign.com, eurogamer.net, polygon.com, pcgamer.com, gamespot.com
 
 **Why It Matters**:
-- Small financial impact (-$214) but indicates data integrity issues
+- Small financial impact (-$221) but indicates data integrity issues
 - Breaks reconciliation with financial systems
 - Potential downstream reporting errors
 
@@ -288,7 +289,6 @@ Publisher 20 (pocketgamer.com) shows **712% CTR** (100 clicks on 24 impressions)
 
 4. **Advanced Analytics**
    - Cohort analysis for publisher retention
-   - Attribution modeling for multi-touch campaigns
    - Predictive models for fill rate optimization
    - Revenue forecasting models
 
@@ -351,23 +351,7 @@ jobs:
 - Create Slack/PagerDuty alerts for test failures
 - Build data quality scorecards (% tests passing, freshness SLA)
 
-**Freshness Checks**:
-```yaml
-sources:
-  - name: ad_platform
-    tables:
-      - name: ad_events
-        loaded_at_field: _loaded_at
-        freshness:
-          warn_after: {count: 6, period: hour}
-          error_after: {count: 12, period: hour}
-```
 
-**SLAs to Define**:
-- Data freshness: < 1 hour for operational reporting
-- Model run time: < 30 minutes for daily refresh
-- Test pass rate: > 95%
-- Data quality score: > 98%
 
 ---
 
@@ -404,7 +388,7 @@ where event_date > (select max(event_date) from {{ this }})
 **Cost Governance**:
 - Set up ClickHouse query cost monitoring
 - Implement query result caching where appropriate
-- Archive old data (> 2 years) to cold storage
+- Archive old data (>2 years)
 - Regular review of model run costs
 
 **Expected Performance Improvements**:
@@ -435,7 +419,6 @@ where event_date > (select max(event_date) from {{ this }})
    - Incident response procedures
 
 **Governance Framework**:
-- **Data Ownership**: Assign DRI (Directly Responsible Individual) per domain
 - **Change Management**: All schema changes require pull request review
 - **Access Control**: Row-level security for sensitive publisher data
 - **Audit Logging**: Track who queries what data
@@ -455,74 +438,15 @@ where event_date > (select max(event_date) from {{ this }})
 **ML-Ready Features**:
 - Build feature store for fraud detection models
 - Create time-series features (7-day, 30-day rolling metrics)
-- Implement point-in-time correct snapshots for training data
 
-**Real-Time Streaming**:
-- Identify metrics that need < 5-minute latency (e.g., pacing)
-- Implement Kafka + ClickHouse MaterializedView for real-time aggregates
-- Maintain batch layer for historical consistency
 
 **Reverse ETL**:
-- Sync high-risk publishers to Salesforce for account manager action
+- Sync high-risk publishers to Salesforce for account manager /sales action
 - Push campaign performance to Google Sheets for advertiser self-service
 - Trigger alerts in Slack when CTR exceeds thresholds
 
 ---
 
-## 5. Lightdash Dashboard Insights
-
-### Chart 1: Revenue Over Time by Publisher
-
-**Key Insights**:
-- Revenue is concentrated in top 5 publishers (80/20 rule)
-- gamespot.com and ign.com are largest revenue drivers
-- Clear weekly seasonality pattern (weekends show 30% drop)
-- Publisher 20 (fraud case) contributes minimal revenue despite high clicks
-
-**Business Recommendation**:
-- Focus account management resources on top 5 publishers
-- Investigate weekend fill rate drops - opportunity to increase revenue
-- Terminate Publisher 20 immediately
-
-### Chart 2: Fill Rate by Publisher
-
-**Key Insights**:
-- Average fill rate: 86.1% across all publishers
-- Best performers: polygon.com (88%), gamespot.com (87%)
-- Worst performers: Publishers 12, 18 with 0% fill rate on certain days
-- Fill rate correlates weakly with revenue (r² = 0.3)
-
-**Business Recommendation**:
-- Investigate low fill rate publishers - technical issues or poor inventory?
-- Optimize bidding algorithm to improve fill rate by 2-3 points = ~$2K additional revenue
-
-### Chart 3: CTR Fraud Detection
-
-**Key Insights**:
-- 8 publishers show abnormal CTR patterns (> 10%)
-- Publisher 20 is clear outlier at 712% - immediate action required
-- Publishers 15, 11, 9 warrant deeper investigation (30-40% CTR)
-- 60% of suspicious traffic comes from mobile devices (bot signal)
-
-**Business Recommendation**:
-1. **Immediate**: Suspend Publisher 20, freeze payments
-2. **This Week**: Audit Publishers 15, 11, 9 - request traffic logs
-3. **This Month**: Implement IP-based bot detection
-4. **Estimated savings**: $10K+ monthly in fraudulent click costs
-
-### Additional Insight: Device Performance
-
-**Key Insight**:
-- Desktop CPM: $4.80, Mobile CPM: $3.20, CTV CPM: $8.50
-- CTV represents only 3% of impressions but 12% of revenue
-- Mobile fill rate (82%) lags desktop (89%)
-
-**Business Recommendation**:
-- Expand CTV inventory - highest CPM, underutilized
-- Investigate mobile fill rate gap - technical integration issue?
-- Potential revenue opportunity: +$5K monthly from CTV expansion
-
----
 
 ## Technical Implementation Details
 
@@ -600,7 +524,7 @@ sum(impressions) as impressions_sum    -- Works!
 ✅ Foreign key relationships validated
 ✅ Categorical flags have valid values (0, 1)
 ✅ All dimension tables have primary keys
-❌ Fraud detected: Publisher 20 has 712% CTR (EXPECTED FAILURE - ALERT)
+❌ Fraud detected: Publisher 20 has 644% CTR (EXPECTED FAILURE - ALERT)
 ```
 
 ---
@@ -618,115 +542,154 @@ Created 3 interactive charts in Lightdash to provide executive-level visibility 
 
 **Business Question**: Which publishers drive the most revenue, and what are the trends?
 
-**Key Findings**:
-- **Top 5 revenue publishers**: GameSpot, IGN, Polygon, Eurogamer, Kotaku
-- **Revenue concentration**: Top 5 publishers represent ~70% of total revenue (Pareto principle confirmed)
-- **Trend**: Relatively stable daily revenue ($100-$200/day per top publisher) with sharp drop-off in early March
-- **Seasonality**: Slight weekend dips visible in the data
 
-**Business Implications**:
-- Focus account management resources on top 5 publishers
-- Investigate March revenue drop - potential technical issue or seasonal effect
-- Consider premium support tier for high-value publishers
+**Top 5 Publishers by Lifetime Revenue** (February 7 - March 11, 2026):
+1. IGN Entertainment: $4,269.92
+2. Polygon Media: $4,152.28
+3. GameSpot Digital: $3,977.98
+4. Kotaku Digital: $2,147.28
+5. The Gamer Network: $2,144.05
+
+**Revenue Distribution:**
+- Top 5 represent 47.8% of total network revenue
+- More balanced than typical Pareto distribution (would expect 60-80%)
+- Lower concentration indicates reduced dependency risk
+
+**Data Quality Findings:**
+All top 5 publishers show elevated CTR (normal: 0.1-0.5%):
+- The Gamer Network: 33.07% CTR
+- Polygon Media: 23.01% CTR
+- IGN Entertainment: 15.28% CTR
+- Kotaku Digital: 14.26% CTR
+- GameSpot Digital: 14.06% CTR
+
+**Critical Observation:** Fraud affects ALL major revenue publishers, not just low-value sources.
+This complicates remediation - cannot simply suspend without eliminating most revenue.
+
+**Technical Note:** Chart displays historical revenue trends through March 11, 2026.
+
+**Business Implications:**
+- Fraud detection and filtering required for ALL publishers, including top revenue sources
+- Traditional "suspend suspicious publishers" approach would eliminate 100% of top 5 revenue
+- Requires sophisticated traffic filtering rather than blanket publisher suspension
+- Immediate priority: Implement real-time fraud scoring and invalid traffic filtering
 
 ---
 
-### Chart 2: Fill Rate Performance by Publisher
+## Chart 2: Fill Rate Performance by Publisher
 
 **Business Question**: How effectively are we monetizing available inventory?
 
-**Key Findings**:
-- **Average fill rate**: 83% across all publishers
-- **Best performers**: Pocket Gamer (100%), GameRant (94.9%), Eurogamer (94%)
-- **Industry benchmark**: 85-90% is considered excellent
-- **Performance spread**: Most publishers cluster around 80-85% (healthy)
+**Key Findings** (calculated from fct_publisher_performance):
+- **Average fill rate**: 84.2% (weighted by impression volume)
+- **Top performers**: 
+  - Pocket Gamer: 100% (suspicious - only 25 impressions, fraudulent)
+  - GameRant: 94.9% (6,414 impressions)
+  - Push Square: 85.0% (2,384 impressions)
+- **Performance range**: 82.3% to 94.9% (excluding Pocket Gamer)
+- **Distribution**: Tightly clustered - 17 of 20 publishers between 83-84%
+
+**Industry Context**:
+- Benchmark: 85-90% is considered excellent
+- Network performance: 84.2% is solid, near lower end of excellent range
+- Opportunity: Most publishers ~1-2 percentage points below benchmark
 
 **Critical Note on Pocket Gamer**:
-⚠️ **100% fill rate is suspicious** - no publisher should have perfect fill rate. Combined with 644% CTR (see Chart 3), this confirms Pocket Gamer is fraudulent. The "perfect" fill rate is likely part of the bot traffic pattern.
+⚠️ 100% fill rate with only 25 impressions is statistically impossible for legitimate traffic.
+Combined with 644% CTR, confirms fraudulent bot pattern.
 
 **Business Implications**:
-- Overall fill rate is healthy (83% average)
-- Opportunity to improve fill rate by 2-3 percentage points = ~$2K additional monthly revenue
-- Consider yield optimization strategies for publishers below 80%
+- Overall network health is good (84.2% average)
+- Consistent performance across publishers (tight 82-85% range)
+- Limited optimization opportunity - already near benchmark
+- Focus areas:
+  - Fraud prevention (higher priority than fill rate optimization)
 
 ---
 
-### Chart 3: Click Fraud Risk Assessment ⚠️ CRITICAL
+## Chart 3: Click Fraud Risk Assessment ⚠️ CRITICAL
 
 **Business Question**: Which publishers show suspicious traffic patterns indicating fraud?
 
-**Key Findings**:
+**Key Findings** 
 
 **🚨 CRITICAL - Fraud Confirmed:**
 - **Pocket Gamer**: 644% CTR (161 clicks on only 25 impressions)
-  - **This is mathematically impossible** - you cannot have 6.4 clicks per impression
-  - **Estimated fraudulent spend**: ~$400 (161 clicks × $2.48 avg CPC)
-  - **100% fill rate** also suspicious (no publisher is perfect)
-  - **Note**: Low impression volume (25) suggests this may be a test publisher or recent addition, but the CTR pattern is still fraudulent and warrants investigation
-  - **ACTION REQUIRED**: Immediate suspension, freeze payments, request traffic logs
+  - **Mathematically impossible** - cannot have 6.4 clicks per impression
+  - 100% fill rate also suspicious
+  - Low volume (25 impressions) suggests test account or recent addition
+  - **ACTION REQUIRED**: Immediate suspension
 
+**High Risk Publishers (CTR > 10%)**:
+13 publishers flagged with abnormally high CTR (see chart for complete list)
 
-**High Risk Publishers (CTR 10-40%)**:
-| Publisher | CTR | Risk Level | Clicks | Impressions |
-|-----------|-----|------------|--------|-------------|
-| Attack of the Fanboy | 40% | High Risk | 869 | 2,172 |
-| TouchArcade | 34.4% | High Risk | 703 | 2,041 |
-| The Gamer Network | 33% | High Risk | 753 | 2,277 |
-| VG247 | 31.4% | High Risk | 676 | 2,153 |
-| Push Square | 30.8% | High Risk | 735 | 2,384 |
+Top 5 worst offenders:
+| Publisher | CTR | Clicks | Impressions |
+|-----------|-----|--------|-------------|
+| Pocket Gamer | 644% | 161 | 25 |
+| Attack of the Fanboy | 40.01% | 869 | 2,172 |
+| TouchArcade | 34.44% | 703 | 2,041 |
+| The Gamer Network | 33.07% | 753 | 2,277 |
+| VG247 | 31.40% | 676 | 2,153 |
 
 **Normal CTR Baseline**: 0.1-0.5% for display ads (industry standard)
 
-**Total Suspicious Traffic**:
-- **8 publishers flagged** (40% of total publisher base)
-- **Estimated monthly fraud cost**: $10K+ if not addressed
-- **Pattern**: Gaming vertical seems particularly susceptible to click fraud
+
+**Critical Finding**: This affects many publishers from publisher network, including high-revenue sources (IGN, GameSpot, Polygon all show 14-23% CTR).
 
 **Root Cause Hypothesis**:
-1. **Bot farms** targeting gaming sites
-2. **Incentivized clicks** (users paid to click ads)
+1. **Bot farms** targeting gaming vertical
+2. **Incentivized clicks** (users paid to click)
 3. **Compromised traffic sources** (malware, click injection)
-4. **Poor traffic quality** from specific traffic sources
+4. **Systematic fraud** across network (not isolated incidents)
 
 **Immediate Action Plan**:
 1. **This Week**: 
-   - Suspend Pocket Gamer immediately
-   - Request traffic logs from top 3 high-risk publishers
-   - Implement IP-based fraud detection
+   - Suspend Pocket Gamer immediately (644% CTR)
+   - Audit top 3 high-volume fraud publishers (Attack of Fanboy, TouchArcade, The Gamer Network)
+   - Implement real-time CTR monitoring with 5% threshold alerts
 
 2. **This Month**:
-   - Audit all publishers with CTR > 5%
+   - Deep investigation of ALL 13 flagged publishers
    - Integrate third-party fraud detection (IAS, DoubleVerify, White Ops)
-   - Add real-time CTR monitoring with auto-alerts at 5% threshold
+   - Implement traffic filtering rather than publisher suspension
 
 3. **This Quarter**:
    - Review and update publisher contracts with fraud clauses
-   - Implement CAPTCHA or challenge-response on high-risk sites
-   - Build ML-based fraud scoring model
+   - Implement device fingerprinting and bot detection
 
 **Financial Impact**:
-- **Current monthly loss**: ~$10K to click fraud
-- **Potential savings**: $120K annually if fraud is eliminated
-- **ROI on fraud detection tools**: 10x+ (typical fraud detection costs $1K/month)
+- Estimated significant fraud exposure from 13 high-risk publishers
+- Conservative estimate: Thousands of dollars monthly in fraudulent clicks
+
+**Business Challenge**:
+Traditional "suspend suspicious publishers" approach would eliminate:
+- ALL top 5 revenue publishers (all show elevated CTR)
+- Requires sophisticated filtering, not blanket suspension
 
 ---
 
 ### Additional Insights from Data Analysis
 
-**Revenue Model**:
-- **CPC-based revenue**: $2.48 average per click (97% of revenue)
-- **CPM-based revenue**: $0.0046 per impression (3% of revenue)
-- **Optimization opportunity**: Current model heavily weighted to clicks, making it vulnerable to click fraud
+**Revenue Model** (verified from raw.ad_events):
+- **Click-based revenue**: $2.76 average CPC (96.5% of total revenue)
+- **Impression-based revenue**: $8.27 CPM (1.8% of total revenue)
+- **Viewable impression revenue**: $26.30 per 1,000 viewable (1.7% of total revenue)
+- **Total revenue**: $35,679 over 37-day period (Feb 7 - Mar 15, 2026)
 
-**Data Quality**:
-- **Duplicate events**: 1.52% (2,000 records) - cleaned via deduplication
-- **Negative revenue**: 151 events (-$214 total) - flagged for investigation
-- **Unfilled impressions**: 13.9% - normal for programmatic advertising
+**Data Quality** (verified from raw data as of March 11, 2026):
+- **Duplicate events**: 1.52% (2,000 records) - cleaned via deduplication in dbt staging layer
+- **Negative revenue**: 153 events totaling -$221.80 - flagged with `has_negative_revenue` flag for investigation
+- **Unfilled impressions**: 15.78% (14,498 of 91,892 impressions) - within normal range for programmatic advertising
+- **Data period**: 37 days (91,892 impressions, 12,469 clicks, 23,448 viewable impressions)
+
+**Note on Data Currency**: 
+ClickHouse database receives daily data loads. Numbers verified as of March 11, 2026. 
+Minor variations may occur if re-run on different dates due to ongoing data accumulation.
 
 **Geographic Distribution**: (Future enhancement - add geo breakdown chart)
 
 **Device Mix**: (Future enhancement - add device breakdown chart)
-
 ---
 
 ### Recommendations for Dashboard Evolution
@@ -740,7 +703,6 @@ Created 3 interactive charts in Lightdash to provide executive-level visibility 
 **Long-term enhancements**:
 1. Predictive analytics for fill rate optimization
 2. Cohort analysis for publisher lifetime value
-3. Attribution modeling for multi-touch campaigns
 4. Automated anomaly detection across all metrics
 
 ---
@@ -758,28 +720,49 @@ Created 3 interactive charts in Lightdash to provide executive-level visibility 
 
 ## Conclusion
 
-This project demonstrates a production-ready approach to analytics engineering:
+This project demonstrates a production-ready approach to analytics engineering on ClickHouse, 
+delivering comprehensive data quality analysis and identifying critical business issues.
 
 **Strengths**:
-- ✅ Comprehensive data quality handling with clear documentation
-- ✅ Thoughtful dimensional modeling balancing simplicity with analytical power
-- ✅ Robust testing strategy (30+ tests) catching issues before reaching users
-- ✅ Production-ready roadmap with concrete implementation steps
-- ✅ Complete documentation enabling knowledge transfer
+- ✅ Comprehensive data quality handling: deduplication (2,000 events), fraud detection (13 publishers), negative revenue flagging (153 events)
+- ✅ Thoughtful dimensional modeling balancing Kimball best practices with ClickHouse optimization
+- ✅ Robust testing strategy (30 tests, 96.7% pass rate) with intentional fraud detection alert
+- ✅ Complete documentation enabling knowledge transfer and reproducible analysis
 
 **Most Critical Finding**: 
-The click fraud issue (Publisher 20 at 712% CTR, 7 others suspicious) represents both financial (~$10K+ monthly) and reputational risk. **Immediate action required** on Publisher 20.
+Systemic click fraud affecting **65% of publisher network** (13 of 20 publishers with CTR > 10%). 
+This includes ALL top revenue sources:
+- Polygon Media: 23% CTR (#2 revenue: $4,152)
+- IGN Entertainment: 15.28% CTR (#1 revenue: $4,270)
+- GameSpot Digital: 14.06% CTR (#3 revenue: $3,978)
 
-**Next Steps**:
-1. **Immediate**: Suspend Publisher 20, freeze payments
-2. **Week 1**: Deploy to production with CI/CD
-3. **Week 2**: Implement fraud detection monitoring
-4. **Week 3**: Expand dimensional model and optimize performance
+**Impact**:
+- **Platform integrity**: Cannot blanket-suspend fraudulent publishers (would eliminate all revenue)
+- **Requires**: Sophisticated traffic filtering, not publisher suspension
+
+** Action Required**:
+1. **This Week**: 
+   - Investigate Pocket Gamer immediately (644% CTR - obvious bot traffic)
+   - Implement real-time CTR monitoring with 5% threshold alerts
+   - Audit top 3 high-volume fraud publishers
+
+2. **This Month**:
+   - Deploy fraud detection (IAS, DoubleVerify, or White Ops)
+
+
+
+**Technical Next Steps**:
+1. **Week 1**: Deploy to production with CI/CD, implement incremental models
+2. **Week 2**: Add real-time fraud monitoring and alerting
+3. **Week 3**: Expand dimensional model (device, geo breakdowns)
+4. **Week 4**: Performance optimization and monitoring
 
 **Business Impact Potential**:
-- **Cost Savings**: $10K+/month from fraud prevention
-- **Revenue Growth**: $5K+/month from CTV expansion and fill rate optimization
-- **Risk Mitigation**: Prevent platform reputation damage from advertiser complaints
+- **Fraud elimination**: Savings
+- **Platform credibility**: Prevent advertiser churn from fraudulent traffic
+- **Network rebuilding**: Required investment to establish legitimate publisher base
+- **Long-term sustainability**: Current 96.5% click-dependent model is unsustainable with fraud
+
 
 ---
 
@@ -857,6 +840,5 @@ venatus-analytics-challenge/
 ├── DESIGN.md
 └── README.md
 ```
-
 
 
