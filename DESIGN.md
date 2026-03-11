@@ -476,7 +476,9 @@ SELECT
     sum(impressions) AS total_impressions,
     avg(ctr_pct) AS avg_ctr_pct
 FROM events
-GROUP BY publisher_id```
+GROUP BY publisher_id
+```
+---
 
 ## Testing Strategy
 
