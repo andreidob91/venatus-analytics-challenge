@@ -462,51 +462,21 @@ where event_date > (select max(event_date) from {{ this }})
 
 ## Technical Implementation Details
 
-### ClickHouse-Specific Challenges
+### Aggregated Column Naming
 
-**Challenge 1: Nested Aggregate Functions**
+**ClickHouse Consideration: Aggregated Column Naming**
 
-ClickHouse does not allow aggregate functions inside other aggregate functions in the same query.
+While working with ClickHouse, I encountered situations where reusing the same column name for both the source column and its aggregated result created ambiguity in downstream expressions. To avoid this, aggregated outputs are always given distinct names.
 
-**Problem Code** (fails):
+**Example**
 ```sql
-sum(if(revenue_usd > 0, revenue_usd, 0)) as positive_revenue  -- ERROR!
-```
-
-**Solution**: Use CTE pattern to separate aggregation from calculation:
-```sql
-with aggregated as (
-    select
-        sum(if(event_type = 'impression', 1, 0)) as impressions,
-        sum(if(event_type = 'click', 1, 0)) as clicks
-    from events
-    group by date
-)
-select
-    *,
-    if(impressions > 0, clicks * 100.0 / impressions, 0) as ctr
-from aggregated
-```
-
-**Challenge 2: Column Name Collision**
-
-Naming an aggregated column the same as its source column causes ClickHouse to detect "nested aggregates."
-
-**Problem Code** (fails):
-```sql
-sum(revenue_usd) as revenue_usd  -- Collision!
-sum(impressions) as impressions  -- Collision!
-```
-
-**Solution**: Rename aggregated columns:
-```sql
-sum(revenue_usd) as total_revenue_usd  -- Works!
-sum(impressions) as impressions_sum    -- Works!
-```
-
-**Lesson Learned**: Always use distinct names for aggregated columns to avoid ambiguity.
-
----
+SELECT
+    publisher_id,
+    sum(revenue_usd) AS total_revenue_usd,
+    sum(impressions) AS total_impressions,
+    avg(ctr_pct) AS avg_ctr_pct
+FROM events
+GROUP BY publisher_id```
 
 ## Testing Strategy
 
