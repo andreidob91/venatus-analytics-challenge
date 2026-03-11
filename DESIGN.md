@@ -149,19 +149,27 @@ cleaned as (
 ### Issue 2: Click Fraud / Invalid Traffic
 
 **Problem**:
-Publisher 20 (pocketgamer.com) shows **712% CTR** (100 clicks on 24 impressions) - physically impossible.
 
-**Full List of Suspicious Publishers**:
-| Publisher ID | Domain | CTR | Classification |
-|-------------|--------|-----|----------------|
-| 20 | pocketgamer.com | 712.5% | **IMPOSSIBLE** - Bot/fraud |
-| 15 | attackofthefanboy.com | 40.9% | Highly suspicious |
-| 11 | thegamer.com | 33.9% | Highly suspicious |
-| 9 | vg247.com | 33.9% | Highly suspicious |
-| 19 | toucharcade.com | 33.8% | Highly suspicious |
-| 17 | pushsquare.com | 31.4% | Highly suspicious |
-| 5 | polygon.com | 21.2% | Suspicious |
-| 13 | gamerant.com | 19.0% | Suspicious |
+Publisher 20 (pocketgamer.com) shows **644% CTR** (161 clicks on 25 impressions) - physically impossible.
+
+**Severity**: CRITICAL - affects ALL top revenue sources
+
+**Full List of Suspicious Publishers** (verified from dim_publishers):
+| Publisher ID | Publisher Name | CTR | Clicks | Impressions | Classification |
+|-------------|----------------|-----|--------|-------------|----------------|
+| 20 | Pocket Gamer | 644% | 161 | 25 | **CRITICAL** - Bot/fraud |
+| 15 | Attack of the Fanboy | 40.01% | 869 | 2,172 | Highly suspicious |
+| 19 | TouchArcade | 34.44% | 703 | 2,041 | Highly suspicious |
+| 11 | The Gamer Network | 33.07% | 753 | 2,277 | Highly suspicious |
+| 9 | VG247 | 31.40% | 676 | 2,153 | Highly suspicious |
+| 17 | Push Square | 30.83% | 735 | 2,384 | Highly suspicious |
+| 5 | Polygon Media | 23.01% | 1,641 | 7,133 | Suspicious (Top #2 revenue) |
+| 13 | GameRant | 18.65% | 1,196 | 6,414 | Suspicious |
+| 2 | IGN Entertainment | 15.28% | 1,529 | 10,004 | Suspicious (Top #1 revenue) |
+| 8 | GamesRadar Plus | 15.01% | 767 | 5,111 | Suspicious |
+| 6 | Kotaku Digital | 14.26% | 718 | 5,036 | Suspicious (Top #4 revenue) |
+| 1 | GameSpot Digital | 14.06% | 1,409 | 10,023 | Suspicious (Top #3 revenue) |
+| 4 | Rock Paper Shotgun | 13.84% | 676 | 4,885 | Suspicious |
 
 **Industry Context**: Normal CTR is 0.1-0.5%; anything above 2-3% warrants investigation.
 
@@ -203,7 +211,7 @@ Publisher 20 (pocketgamer.com) shows **712% CTR** (100 clicks on 24 impressions)
 **Affected Publishers**: ign.com, eurogamer.net, polygon.com, pcgamer.com, gamespot.com
 
 **Why It Matters**:
-- Small financial impact (-$221) but indicates data integrity issues
+- Small financial impact ($221) but indicates data integrity issues
 - Breaks reconciliation with financial systems
 - Potential downstream reporting errors
 
@@ -224,21 +232,28 @@ Publisher 20 (pocketgamer.com) shows **712% CTR** (100 clicks on 24 impressions)
 4. Add validation in ETL pipeline before loading
 
 ---
-
 ### Pattern 4: Unfilled Impressions (NOT AN ISSUE)
 
 **Observation**:
-- 18,278 events (13.9%) with NULL `campaign_id` and `advertiser_id`
+- 14,498 unfilled impressions out of 91,892 total impressions (15.78%)
 - Perfect correlation with `is_filled = 0`
+- NULL `campaign_id` and `advertiser_id` for unfilled impressions
 
 **Analysis**: This is **normal and expected**:
 - When no advertiser wins auction, ad slot remains unfilled
-- NULL values are correct business logic
-- 86.1% fill rate is healthy for programmatic advertising
+- NULL values are correct business logic (not data quality issue)
+- 84.2% fill rate is healthy for programmatic advertising (industry benchmark: 85-90%)
 
-**Handling**: Use LEFT JOINs and COALESCE when joining dimensions; track fill rate as KPI.
+**Handling**: 
+- Use LEFT JOINs when joining to campaigns/advertisers to preserve unfilled impressions
+- COALESCE NULL campaign_id to 0 in fact tables for cleaner grouping
+- Track fill rate as key business metric in `fct_publisher_performance` and `dim_publishers`
+- Formula: `fill_rate_pct = (filled_impressions / total_impressions) × 100`
 
----
+**Business Context**:
+- Unfilled impressions represent lost revenue opportunity
+- 1% fill rate improvement across network ≈ marginal revenue gain
+- Current 84.2% average indicates healthy network performance
 
 ## 3. Trade-Offs & What I Didn't Build
 
