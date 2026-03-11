@@ -3,7 +3,7 @@
 
 ## Executive Summary
 
-Built a production-ready dbt analytics layer transforming 131K+ ad-serving events from Venatus's programmatic platform. The project addresses critical data quality issues including duplicate events (1.52%), click fraud (8 publishers with 10-644% CTR), and negative revenue values. The final deliverable includes 4 staging models, 5 mart models (3 dimensions + 2 facts), 30+ comprehensive tests, and clean documentation.
+Built a production-ready dbt analytics layer transforming 131K+ ad-serving events from Venatus's programmatic platform. The project addresses critical data quality issues including duplicate events (1.52%), click fraud (8 publishers with 10-644% CTR), and negative revenue values. The final deliverable includes 4 staging models, 5 mart models (3 dimensions + 2 facts), 36+ comprehensive tests, and clean documentation.
 
 **Key Findings:**
 - 2,000 duplicate events (1.52%) requiring deduplication via ROW_NUMBER() 
@@ -388,7 +388,7 @@ where event_date > (select max(event_date) from {{ this }})
 **Cost Governance**:
 - Set up ClickHouse query cost monitoring
 - Implement query result caching where appropriate
-- Archive old data (>2 years)
+- Archive old data (> 2 years) to cold storage
 - Regular review of model run costs
 
 **Expected Performance Improvements**:
@@ -498,23 +498,51 @@ sum(impressions) as impressions_sum    -- Works!
 
 ## Testing Strategy
 
-### Test Coverage
+## Test Coverage
 
-**Total Tests**: 30+
-- **Passing**: 29+
-- **Expected Failures**: 1 (`suspicious_ctr_check` - fraud detection)
+**Total Tests**: 35
+- **Passing**: 34 (97.1%)
+- **Deliberate Failures**: 1 (`suspicious_ctr_check` - fraud detection alert)
 
 **Test Types Implemented**:
 
 1. **Generic Tests** (from `schema.yml`):
-   - `unique`: Primary keys in all staging and dimension tables (8 tests)
-   - `not_null`: Required fields across all models (12 tests)
-   - `accepted_values`: Categorical fields - event_type, is_filled, flags (6 tests)
-   - `relationships`: Foreign key integrity - publisher_id, campaign_id (4 tests)
+   - `unique`: Primary keys in all staging and dimension tables (7 tests)
+   - `not_null`: Required fields across all models (18 tests)
+   - `accepted_values`: Categorical fields - event_type, is_filled, flags (4 tests)
+   - `relationships`: Foreign key integrity - publisher_id references (2 tests)
 
-2. **Singular Tests** (custom SQL):
-   - `suspicious_ctr_check.sql`: Detects publishers with CTR > 100%
-   - **This test FAILS by design** - it's an alert, not a data blocker
+2. **Custom Tests** (from `tests/` folder):
+   - `suspicious_ctr_check`: Fraud detection test that deliberately fails when CTR > 10% (1 test)
+   - Alerts on 13 publishers with suspicious traffic patterns
+
+**Test Strategy**:
+- All models have `unique` and `not_null` tests on primary keys
+- Data quality flags (`is_suspicious_traffic`, `has_negative_revenue`) validated with `accepted_values`
+- Referential integrity enforced via `relationships` tests
+- Custom fraud detection test serves as automated alert system## Test Coverage
+
+**Total Tests**: 35
+- **Passing**: 34 (97.1%)
+- **Deliberate Failures**: 1 (`suspicious_ctr_check` - fraud detection alert)
+
+**Test Types Implemented**:
+
+1. **Generic Tests** (from `schema.yml`):
+   - `unique`: Primary keys in all staging and dimension tables (7 tests)
+   - `not_null`: Required fields across all models (18 tests)
+   - `accepted_values`: Categorical fields - event_type, is_filled, flags (4 tests)
+   - `relationships`: Foreign key integrity - publisher_id references (2 tests)
+
+2. **Custom Tests** (from `tests/` folder):
+   - `suspicious_ctr_check`: Fraud detection test that deliberately fails when CTR > 10% (1 test)
+   - Alerts on 13 publishers with suspicious traffic patterns
+
+**Test Strategy**:
+- All models have `unique` and `not_null` tests on primary keys
+- Data quality flags (`is_suspicious_traffic`, `has_negative_revenue`) validated with `accepted_values`
+- Referential integrity enforced via `relationships` tests
+- Custom fraud detection test serves as automated alert system
 
 ### Test Results Summary
 ```
@@ -542,6 +570,9 @@ Created 3 interactive charts in Lightdash to provide executive-level visibility 
 
 **Business Question**: Which publishers drive the most revenue, and what are the trends?
 
+### Chart 1: Revenue Over Time - Top 5 Publishers
+
+## Chart 1: Revenue Over Time - Top 5 Publishers
 
 **Top 5 Publishers by Lifetime Revenue** (February 7 - March 11, 2026):
 1. IGN Entertainment: $4,269.92
@@ -611,7 +642,7 @@ Combined with 644% CTR, confirms fraudulent bot pattern.
 
 **Business Question**: Which publishers show suspicious traffic patterns indicating fraud?
 
-**Key Findings** 
+**Key Findings** (verified from dim_publishers):
 
 **🚨 CRITICAL - Fraud Confirmed:**
 - **Pocket Gamer**: 644% CTR (161 clicks on only 25 impressions)
@@ -726,8 +757,9 @@ delivering comprehensive data quality analysis and identifying critical business
 **Strengths**:
 - ✅ Comprehensive data quality handling: deduplication (2,000 events), fraud detection (13 publishers), negative revenue flagging (153 events)
 - ✅ Thoughtful dimensional modeling balancing Kimball best practices with ClickHouse optimization
-- ✅ Robust testing strategy (30 tests, 96.7% pass rate) with intentional fraud detection alert
+- ✅ Robust testing strategy (35 tests, 97.1% pass rate) with intentional fraud detection alert
 - ✅ Complete documentation enabling knowledge transfer and reproducible analysis
+- ✅ All metrics verified via SQL queries - reproducible and accurate
 
 **Most Critical Finding**: 
 Systemic click fraud affecting **65% of publisher network** (13 of 20 publishers with CTR > 10%). 

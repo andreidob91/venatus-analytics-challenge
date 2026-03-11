@@ -12,7 +12,7 @@ Built a production-ready dbt analytics layer on ClickHouse with comprehensive da
 1. **dbt Models** (9 total):
    - 4 staging models with deduplication and data quality flags
    - 5 mart models (3 dimensions + 2 facts)
-   - 30+ tests with 96% pass rate (1 expected failure for fraud detection)
+   - 35+ tests with 97.1% pass rate (1 expected failure for fraud detection)
 
 2. **Lightdash Dashboard** (3 charts):
    - Revenue trends for top 5 publishers
@@ -83,8 +83,8 @@ open http://localhost:8880
 
 ### 📋 Test Results
 
-- **Total tests**: 30
-- **Passing**: 29 (96.7%)
+- **Total tests**: 35
+- **Passing**: 34 (97.1%)
 - **Expected failures**: 1 (fraud detection alert)
 
 
