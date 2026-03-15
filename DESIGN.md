@@ -876,6 +876,7 @@ dim_ad_units (60 rows)
 - Column name aliasing to avoid collisions
 
 ### Repository Structure
+```
 venatus-analytics-challenge/
 ├── dbt/
 │   ├── models/
