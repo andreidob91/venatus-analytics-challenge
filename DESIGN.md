@@ -876,7 +876,6 @@ dim_ad_units (60 rows)
 - Column name aliasing to avoid collisions
 
 ### Repository Structure
-```
 venatus-analytics-challenge/
 ├── dbt/
 │   ├── models/
@@ -888,19 +887,33 @@ venatus-analytics-challenge/
 │   │   │       ├── stg_publishers.sql
 │   │   │       ├── stg_campaigns.sql
 │   │   │       └── stg_ad_units.sql
-│   │   └── marts/
-│   │       └── core/
-│   │           ├── schema.yml
-│   │           ├── dim_publishers.sql
-│   │           ├── dim_campaigns.sql
-│   │           ├── dim_ad_units.sql
-│   │           ├── fct_ad_events_daily.sql
-│   │           └── fct_publisher_performance.sql
-│   └── tests/
-│       └── suspicious_ctr_check.sql
-├── EXPLORATION_NOTES.md
+│   │   ├── marts/
+│   │   │   └── core/
+│   │   │       ├── schema.yml
+│   │   │       ├── dim_publishers.sql
+│   │   │       ├── dim_campaigns.sql
+│   │   │       ├── dim_ad_units.sql
+│   │   │       ├── fct_ad_events_daily.sql
+│   │   │       └── fct_publisher_performance.sql
+│   │   └── sources.yml
+│   ├── tests/
+│   │   └── suspicious_ctr_check.sql
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+│   ├── packages.yml
+│   └── package-lock.yml
+├── lightdash/
+│   ├── chart_queries.sql
+│   ├── DASHBOARD_README.md
+│   ├── Revenue_Overview.png
+│   ├── Fill_Rate_Analysis.png
+│   └── Click_Fraud_Risk.png
+├── clickhouse/
+│   └── init-db.sql
 ├── DESIGN.md
-└── README.md
+├── EXPLORATION_NOTES.md
+├── LIGHTDASH_SETUP.md
+├── README.md
+├── docker-compose.yml
+└── Makefile
 ```
-
-
