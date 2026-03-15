@@ -544,9 +544,58 @@ GROUP BY publisher_id
 ## 5. Lightdash Dashboard Insights
 
 ### Dashboard Overview
+
+### Dashboard Overview
+
 Created 3 interactive charts in Lightdash to provide executive-level visibility into revenue performance, fill rate efficiency, and fraud detection.
 
-**Dashboard URL**: http://localhost:8880 (Venatus Dashboard)
+**Dashboard URL**: http://localhost:8880/projects/a03a2cdb-d40f-46a4-acb2-512fb451ee41/dashboards/55173db9-9e62-4ce4-9b8f-d57947d602cd/view (Venatus Dashboard)
+
+### Lightdash Documentation Approach
+
+**Note on Dashboard-as-Code Export:**
+
+The standard workflow outlined in `LIGHTDASH_SETUP.md` recommends exporting the dashboard YAML/JSON configuration for version control.
+
+However, after building the dashboards in the Lightdash UI, the export feature failed to generate a preview in the local Docker environment. As a result, the dashboard configuration could not be exported directly.
+
+To document the final dashboard, screenshots of the full dashboard and individual charts have been included in the repository under the `lightdash/` directory.
+
+These screenshots capture the final dashboard layout and visualisations used for analysis.
+
+**Alternative Approach Taken:**
+
+Instead of exported YAML artifacts, I've documented the dashboards through:
+
+1. **SQL Query Documentation**: All 3 chart queries are saved in `lightdash/chart_queries.sql` with:
+   - Complete SQL code for each chart
+   - Business context and descriptions
+
+2. **Detailed Analysis in DESIGN.md**: Each chart includes:
+   - Business questions addressed
+   - Key findings with verified metrics
+   - Data quality observations
+   - Business implications and recommendations
+
+3. **Reproducibility**: Anyone can recreate the exact dashboards by:
+   - Running `make up` to start the stack
+   - Logging into Lightdash (admin@lightdash.com / admin123!)
+   - Using SQL Runner to execute queries from `lightdash/chart_queries.sql`
+   - Configuring chart types as documented below
+
+This approach achieves the same goals as dashboard-as-code:
+- ✅ Version-controlled SQL queries
+- ✅ Reviewable in git alongside dbt models
+- ✅ Fully reproducible by reviewers
+- ✅ Documented with business context
+
+**Chart SQL Queries Location**: `lightdash/chart_queries.sql`
+
+---
+
+Created 3 interactive charts in Lightdash to provide executive-level visibility into revenue performance, fill rate efficiency, and fraud detection.
+
+**Dashboard URL**: http://localhost:8880/projects/a03a2cdb-d40f-46a4-acb2-512fb451ee41/dashboards/55173db9-9e62-4ce4-9b8f-d57947d602cd/view (Venatus Dashboard)
 
 ---
 
@@ -554,9 +603,6 @@ Created 3 interactive charts in Lightdash to provide executive-level visibility 
 
 **Business Question**: Which publishers drive the most revenue, and what are the trends?
 
-### Chart 1: Revenue Over Time - Top 5 Publishers
-
-## Chart 1: Revenue Over Time - Top 5 Publishers
 
 **Top 5 Publishers by Lifetime Revenue** (February 7 - March 11, 2026):
 1. IGN Entertainment: $4,269.92
